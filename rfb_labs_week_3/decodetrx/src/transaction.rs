@@ -29,7 +29,7 @@ pub struct Output {
 }
 
 fn as_btc<S: Serializer, T: BitcoinValue>(t: &T, s: S) -> Result<S::Ok, S::Error> {
-
+    s.serialize_f64(t.to_btc())
 }
 
 #[derive(Debug)]
@@ -39,6 +39,10 @@ impl Amount {
   // type associated functiion that initiate the instance of the struct i.e Amount
   pub fn from_sat(satoshi: u64) -> Amount {
     Amount(satoshi)
+  }
+
+  pub fn to_sat(&self) -> u64 {
+    self.0
   }
 }
 
@@ -51,11 +55,18 @@ impl Txid {
     pub fn from_bytes(bytes: [u8; 32]) -> Txid {
         Txid(bytes)
     }
+
+    pub fn as_bytes(&self) -> [u8; 32] {
+        self.0
+    }
 }
 
 impl Serialize for Txid {
     fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-       
+        // Txids are conventionally displayed in big-endian (byte-reversed) hex.
+        let mut bytes = self.0;
+        bytes.reverse();
+        s.serialize_str(&hex::encode(bytes))
     }
 }
 
@@ -66,7 +77,7 @@ trait BitcoinValue {
 
 impl BitcoinValue for Amount {
     fn to_btc(&self) -> f64 {
-       
+        self.0 as f64 / 100_000_000.0
     }
 }
 
